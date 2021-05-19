@@ -9,7 +9,14 @@ let init = (app) => {
 
     // This is the Vue data.
     app.data = {
-        // Complete as you see fit.
+        file_name: null, // File name
+        file_type: null, // File type
+        file_date: null, // Date when file uploaded
+        file_path: null, // Path of file in GCS
+        download_url: null, // URL to download a file
+        uploading: false, // upload in progress
+        deleting: false, // delete in progress
+        delete_confirmation: false, // Show the delete confirmation thing.
     };
 
     app.enumerate = (a) => {
@@ -20,22 +27,159 @@ let init = (app) => {
     };
 
 
+    app.set_result = function (r) {
+        // Sets the results after a server call.
+        app.vue.file_name = r.data.file_name;
+        app.vue.file_type = r.data.file_type;
+        app.vue.file_date = r.data.file_date;
+        app.vue.file_path = r.data.file_path;
+        app.vue.downloar_url = r.data.download_url;
+        if (app.vue.file_date) {
+            let d = new Sugar.Date(app.vue.file_date + "Z");
+            app.vue.file_info = app.vue.file_name + ", uploaded on " + d.long();
+        } else {
+            app.vue.file_info = app.vue.file_name;
+        }
+    }
+
+    app.upload_file = function (event) {
+        let input = event.target;
+        let file = input.files[0];
+        if (file) {
+            app.vue.uploading = true;
+            let file_type = file.type;
+            let file_name = file.name;
+            let file_size = file.size;
+            // Requests the upload URL.
+            axios.post(obtain_gcs_url, {
+                action: "PUT",
+                mimetype: file_type,
+                file_name: file_name
+            }).then ((r) => {
+                let upload_url = r.data.signed_url;
+                let file_path = r.data.file_path;
+                // Uploads the file, using the low-level interface.
+                let req = new XMLHttpRequest();
+                // We listen to the load event = the file is uploaded, and we call upload_complete.
+                // That function will notify the server `of the location of the image.
+                req.addEventListener("load", function () {
+                    app.upload_complete(file_name, file_type, file_size, file_path);
+                });
+                // TODO: if you like, add a listener for "error" to detect failure.
+                req.open("PUT", upload_url, true);
+                req.send(file);
+            });
+        }
+    }
+
+    app.upload_complete = function (file_name, file_type, file_size, file_path) {
+        // We need to let the server know that the upload was complete;
+        axios.post(notify_url, {
+            file_name: file_name,
+            file_type: file_type,
+            file_path: file_path,
+            file_size: file_size,
+        }).then( function (r) {
+            app.vue.uploading = false;
+            app.vue.file_name = file_name;
+            app.vue.file_type = file_type;
+            app.vue.file_path = file_path;
+            app.vue.file_date = r.data.file_date;
+            app.vue.download_url = r.data.download_url;
+        });
+    }
+
+    app.delete_file = function () {
+        if (!vue.app.delete_confirmation) {
+            // Ask for confirmation before deleting it.
+            vue.app.delete_confirmation = true;
+        } else {
+            // It's confirmed.
+            app.vue.delete_confirmation = false;
+            app.vue.deleting = true;
+            // Obtains the delete URL.
+            let file_path = app.vue.file_path;
+            axios.post(obtain_gcs_url, {
+                action: "DELETE",
+                file_path: file_path,
+            }).then(function (r) {
+                let delete_url = r.data.signed_url;
+                if (delete_url) {
+                    // Performs the deletion request.
+                    let req = new XMLHttpRequest();
+                    req.addEventListener("load", function () {
+                        app.deletion_complete(file_path);
+                    });
+                    // TODO: if you like, add a listener for "error" to detect failure.
+                    req.open("DELETE", delete_url);
+                    req.send();
+
+                }
+            });
+        }
+    };
+
+    app.deletion_complete = function (file_path) {
+        // We need to notify the server that the file has been deleted on GCS.
+        axios.post(delete_url, {
+            file_path: file_path,
+        }).then (function (r) {
+            app.vue.deleting =  false;
+            app.vue.file_name = null;
+            app.vue.file_type = null;
+            app.vue.file_date = null;
+            app.vue.download_url = null;
+        })
+    }
+
+    app.download_file = function () {
+        if (download_url) {
+            let req = new XMLHttpRequest();
+            req.addEventListener("load", function () {
+                app.do_download(req);
+            });
+            req.open("GET", app.vue.downloar_url);
+            req.send();
+        }
+    };
+
+    app.do_download = function (req) {
+        let blob = new Blob(req.response);
+        let data_url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = data_url;
+        a.download = app.vue.file_name;
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(data_url);
+    };
+
+    app.computed = {
+    };
+
     // This contains all the methods.
     app.methods = {
-        // Complete as you see fit.
+        upload_file: app.upload_file, // Uploads a selected file
+        delete_file: app.delete_file, // Delete the file.
+        download_file: app.download_file, // Downloads it.
     };
 
     // This creates the Vue instance.
     app.vue = new Vue({
         el: "#vue-target",
         data: app.data,
-        methods: app.methods
+        computed: app.computed,
+        methods: app.methods,
     });
 
     // And this initializes it.
     app.init = () => {
         // Put here any initialization code.
         // Typically this is a server GET call to load the data.
+        axios.get(file_info_url)
+            .then(function (r) {
+                app.set_result(r);
+            });
     };
 
     // Call to the initializer.
