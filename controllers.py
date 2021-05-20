@@ -172,7 +172,6 @@ def delete_path(file_path):
     """Deletes a file given the path, without giving error if the file
     is missing."""
     try:
-        # FIXME
         bucket, id = os.path.split(file_path)
         gcs.delete(bucket[1:], id)
     except:
