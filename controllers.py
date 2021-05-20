@@ -106,7 +106,6 @@ def obtain_gcs():
         extension = os.path.splitext(file_name)[1]
         file_path = os.path.join(BUCKET, str(uuid.uuid1()) + extension)
         # Marks that the path may be used to upload a file.
-        print("Obtain url for", file_path, mimetype)
         mark_possible_upload(file_path)
         upload_url = gcs_url(GCS_KEYS, file_path, verb='PUT',
                              content_type=mimetype)

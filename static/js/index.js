@@ -203,11 +203,17 @@ let init = (app) => {
 
     app.do_download = function (req) {
         // This Machiavellic implementation is thanks to Massimo DiPierro.
+        // This creates a data URL out of the file we downloaded.
         let data_url = URL.createObjectURL(req.response);
+        // Let us now build an a tag, not attached to anything,
+        // that looks like this:
+        // <a href="my data url" download="myfile.jpg"></a>
         let a = document.createElement('a');
         a.href = data_url;
         a.download = app.vue.file_name;
+        // and let's click on it, to do the download!
         a.click();
+        // we clean up our act.
         a.remove();
         URL.revokeObjectURL(data_url);
     };
