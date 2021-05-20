@@ -13,6 +13,7 @@ let init = (app) => {
         file_type: null, // File type
         file_date: null, // Date when file uploaded
         file_path: null, // Path of file in GCS
+        file_size: null, // Size of uploaded file
         download_url: null, // URL to download a file
         uploading: false, // upload in progress
         deleting: false, // delete in progress
@@ -26,6 +27,28 @@ let init = (app) => {
         return a;
     };
 
+    app.file_info = function () {
+        let info = "";
+        if (app.vue.file_size) {
+            info = app.vue.file_size.toString();
+        }
+        if (app.vue.file_type) {
+            if (info) {
+                info += " " + app.vue.file_type;
+            } else {
+                info = app.vue.file_type;
+            }
+        }
+        if (info) {
+            info = " (" + info + ")";
+        }
+        if (app.vue.file_date) {
+            let d = new Sugar.Date(app.vue.file_date + "+00:00");
+            info += ", uploaded " + d.relative();
+        }
+        return app.vue.file_name + info;
+    }
+
 
     app.set_result = function (r) {
         // Sets the results after a server call.
@@ -33,13 +56,8 @@ let init = (app) => {
         app.vue.file_type = r.data.file_type;
         app.vue.file_date = r.data.file_date;
         app.vue.file_path = r.data.file_path;
+        app.vue.file_size = r.data.file_size;
         app.vue.downloar_url = r.data.download_url;
-        if (app.vue.file_date) {
-            let d = new Sugar.Date(app.vue.file_date + "Z");
-            app.vue.file_info = app.vue.file_name + ", uploaded on " + d.long();
-        } else {
-            app.vue.file_info = app.vue.file_name;
-        }
     }
 
     app.upload_file = function (event) {
@@ -90,9 +108,9 @@ let init = (app) => {
     }
 
     app.delete_file = function () {
-        if (!vue.app.delete_confirmation) {
+        if (!app.vue.delete_confirmation) {
             // Ask for confirmation before deleting it.
-            vue.app.delete_confirmation = true;
+            app.vue.delete_confirmation = true;
         } else {
             // It's confirmed.
             app.vue.delete_confirmation = false;
@@ -155,6 +173,7 @@ let init = (app) => {
     };
 
     app.computed = {
+        file_info: app.file_info,
     };
 
     // This contains all the methods.

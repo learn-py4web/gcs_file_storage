@@ -87,6 +87,7 @@ def file_info():
         file_name=row.get('file_name'),
         file_type=row.get('file_type'),
         file_date=row.get('file_date'),
+        file_size=row.get('file_size'),
         file_path=file_path,
         download_url=None if file_path is None else gcs_url(GCS_KEYS, file_path),
         # These two could be controlled to get other things done.
@@ -117,7 +118,7 @@ def obtain_gcs():
         file_path = request.json.get("file_path")
         if file_path is not None:
             # We check that the file_path belongs to the user.
-            r = db(db.upload.path == file_path).select().first()
+            r = db(db.upload.file_path == file_path).select().first()
             if r is not None and r.owner == get_user_email():
                 # Yes, we can let the deletion happen.
                 delete_url = gcs_url(GCS_KEYS, file_path, verb='DELETE')
