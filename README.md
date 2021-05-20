@@ -16,7 +16,7 @@
   google.com/storage/docs/gsutil_install), then do:
   
   
-    gsutil cors set cors_json_file.json gs://bucketname
+    gsutil cors set documentation/cors_json_file.json gs://bucketname
 
   where of course bucketname is the name of the bucket you created. 
 
