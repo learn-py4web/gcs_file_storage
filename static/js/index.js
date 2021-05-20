@@ -2,6 +2,38 @@
 // and be used to initialize it.
 let app = {};
 
+// Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable-string
+/**
+ * Format bytes as human-readable text.
+ *
+ * @param bytes Number of bytes.
+ * @param si True to use metric (SI) units, aka powers of 1000. False to use
+ *           binary (IEC), aka powers of 1024.
+ * @param dp Number of decimal places to display.
+ *
+ * @return Formatted string.
+ */
+function humanFileSize(bytes, si=false, dp=1) {
+  const thresh = si ? 1000 : 1024;
+
+  if (Math.abs(bytes) < thresh) {
+    return bytes + ' B';
+  }
+
+  const units = si
+    ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+  let u = -1;
+  const r = 10**dp;
+
+  do {
+    bytes /= thresh;
+    ++u;
+  } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+
+  return bytes.toFixed(dp) + ' ' + units[u];
+}
 
 // Given an empty app object, initializes it filling its attributes,
 // creates a Vue instance, and then initializes the Vue instance.
@@ -28,25 +60,29 @@ let init = (app) => {
     };
 
     app.file_info = function () {
-        let info = "";
-        if (app.vue.file_size) {
-            info = app.vue.file_size.toString();
-        }
-        if (app.vue.file_type) {
-            if (info) {
-                info += " " + app.vue.file_type;
-            } else {
-                info = app.vue.file_type;
+        if (app.vue.file_path) {
+            let info = "";
+            if (app.vue.file_size) {
+                info = humanFileSize(app.vue.file_size.toString(), si=true);
             }
+            if (app.vue.file_type) {
+                if (info) {
+                    info += " " + app.vue.file_type;
+                } else {
+                    info = app.vue.file_type;
+                }
+            }
+            if (info) {
+                info = " (" + info + ")";
+            }
+            if (app.vue.file_date) {
+                let d = new Sugar.Date(app.vue.file_date + "+00:00");
+                info += ", uploaded " + d.relative();
+            }
+            return app.vue.file_name + info;
+        } else {
+            return "";
         }
-        if (info) {
-            info = " (" + info + ")";
-        }
-        if (app.vue.file_date) {
-            let d = new Sugar.Date(app.vue.file_date + "+00:00");
-            info += ", uploaded " + d.relative();
-        }
-        return app.vue.file_name + info;
     }
 
 
@@ -102,6 +138,7 @@ let init = (app) => {
             app.vue.file_name = file_name;
             app.vue.file_type = file_type;
             app.vue.file_path = file_path;
+            app.vue.file_size = file_size;
             app.vue.file_date = r.data.file_date;
             app.vue.download_url = r.data.download_url;
         });
@@ -142,10 +179,12 @@ let init = (app) => {
         axios.post(delete_url, {
             file_path: file_path,
         }).then (function (r) {
+            // Poof, no more file.
             app.vue.deleting =  false;
             app.vue.file_name = null;
             app.vue.file_type = null;
             app.vue.file_date = null;
+            app.vue.file_path = null;
             app.vue.download_url = null;
         })
     }
