@@ -34,13 +34,4 @@ db.define_table(
     Field('confirmed', 'boolean', default=False), # Was the upload to GCS confirmed?
 )
 
-# This table is used to store paths where a file _might_ have been uploaded
-# and then left orphaned (not associated with any user).  It would be a good
-# idea to do periodic cleanups of GCS removing these paths.
-db.define_table(
-    'cleanup',
-    Field('path'),
-    Field('created_on', default=get_time)
-)
-
 db.commit()
