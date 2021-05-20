@@ -93,7 +93,7 @@ let init = (app) => {
         app.vue.file_date = r.data.file_date;
         app.vue.file_path = r.data.file_path;
         app.vue.file_size = r.data.file_size;
-        app.vue.downloar_url = r.data.download_url;
+        app.vue.download_url = r.data.download_url;
     }
 
     app.upload_file = function (event) {
@@ -190,19 +190,20 @@ let init = (app) => {
     }
 
     app.download_file = function () {
-        if (download_url) {
+        if (app.vue.download_url) {
             let req = new XMLHttpRequest();
             req.addEventListener("load", function () {
                 app.do_download(req);
             });
-            req.open("GET", app.vue.downloar_url);
+            req.responseType = 'blob';
+            req.open("GET", app.vue.download_url, true);
             req.send();
         }
     };
 
     app.do_download = function (req) {
-        let blob = new Blob(req.response);
-        let data_url = URL.createObjectURL(blob);
+        // This Machiavellic implementation is thanks to Massimo DiPierro.
+        let data_url = URL.createObjectURL(req.response);
         let a = document.createElement('a');
         a.href = data_url;
         a.download = app.vue.file_name;
