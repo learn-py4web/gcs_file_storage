@@ -104,7 +104,7 @@ def obtain_gcs():
         mimetype = request.json.get("mimetype", "")
         file_name = request.json.get("file_name")
         extension = os.path.splitext(file_name)[1]
-        file_path = os.path.join(BUCKET, str(uuid.uuid1()) + extension)
+        file_path = BUCKET + "/" + str(uuid.uuid1()) + extension
         # Marks that the path may be used to upload a file.
         mark_possible_upload(file_path)
         upload_url = gcs_url(GCS_KEYS, file_path, verb='PUT',
