@@ -55,7 +55,7 @@ gcs = NQGCS(json_key_path=GCS_KEY_PATH)
 
 
 @action('index')
-@action.uses(db, auth.user, 'index.html')
+@action.uses('index.html', db, auth.user)
 def index():
     return dict(
         file_info_url = URL('file_info', signer=url_signer),
