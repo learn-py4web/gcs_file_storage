@@ -134,7 +134,6 @@ def notify_upload():
     file_name = request.json.get("file_name")
     file_path = request.json.get("file_path")
     file_size = request.json.get("file_size")
-    print("File was uploaded:", file_path, file_name, file_type)
     # Deletes any previous file.
     rows = db(db.upload.owner == get_user_email()).select()
     for r in rows:

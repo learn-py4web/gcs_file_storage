@@ -45,7 +45,6 @@ def sign_url(path, expiration, account_email, keytext,
                                              content_type=content_type,
                                              expiration=expiration,
                                              resource=path)
-    print("string to sign:", string_to_sign)
     signature_signed = base64sign(string_to_sign, private_key)
     query_params = {'GoogleAccessId': account_email,
                     'Expires': str(expiration),
