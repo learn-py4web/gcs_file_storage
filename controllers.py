@@ -121,8 +121,8 @@ def obtain_gcs():
             r = db(db.upload.file_path == file_path).select().first()
             if r is not None and r.owner == get_user_email():
                 # Yes, we can let the deletion happen.
-                delete_url = gcs_url(GCS_KEYS, file_path, verb='DELETE')
-                return dict(signed_url=delete_url)
+                signed_url = gcs_url(GCS_KEYS, file_path, verb=verb)
+                return dict(signed_url=signed_url)
         # Otherwise, we return no URL, so we don't authorize the deletion.
         return dict(signer_url=None)
 
