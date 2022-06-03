@@ -3,7 +3,7 @@ import base64
 import time
 import urllib.parse
 
-# If these packages are not found, install pycrypto.
+# If these packages are not found, install pycryptodome.
 # You may need to add this to the requirements.txt
 import Crypto.Hash.SHA256 as SHA256
 import Crypto.PublicKey.RSA as RSA
